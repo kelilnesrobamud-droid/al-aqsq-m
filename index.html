@@ -1,1 +1,214 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>አል አቅሷ መድረሳ - አስተዳደር</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 5px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 10px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); box-sizing: border-box; }
+        h1 { color: #1a5d1a; text-align: center; font-size: 18px; margin: 10px 0; }
+        h2 { color: #2e7d32; font-size: 14px; margin-top: 15px; border-left: 3px solid #1a5d1a; padding-left: 5px; }
+        .registration-area { display: none; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; }
+        .toggle-btn { background: #27ae60; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; font-size: 13px; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .btn-save { background-color: #1a5d1a; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-top: 10px; }
+        th, td { border: 1px solid #eee; padding: 8px 2px; text-align: center; font-size: 11px; word-wrap: break-word; }
+        th { background-color: #f8fdf9; color: #1a5d1a; }
+        .col-id { width: 10%; } .col-name { width: 35%; text-align: left; padding-left: 3px; } .col-paid { width: 18%; } .col-rem { width: 15%; } .col-act { width: 22%; }
+        .action-btn { background-color: #3498db; color: white; border: none; padding: 5px 7px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: bold; margin-right: 2px; }
+        .add-btn { background-color: #27ae60; } /* አረንጓዴ ለመደመር */
+        .footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+        .admin-box { background: #455a64; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        #adminPanel { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; padding: 10px; box-sizing: border-box; }
+        .admin-content { max-width: 400px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 10px; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>አል አቅሷ መድረሳ</h1>
+
+    <div id="section1">
+        <h2>1ኛ ክፍል (ፈትሂያ)</h2>
+        <button class="toggle-btn" onclick="toggleForm(1)">+ ተማሪ መዝግብ</button>
+        <div id="form1" class="registration-area">
+            <input type="text" id="name1" placeholder="ስም">
+            <input type="number" id="paid1" placeholder="ክፍያ">
+            <input type="number" id="rem1" placeholder="ቀሪ">
+            <button class="btn-save" onclick="saveToFirebase(1)">ሴቭ</button>
+        </div>
+        <table>
+            <thead>
+                <tr><th class="col-id">ተ.ቁ</th><th class="col-name">ስም</th><th class="col-paid">ክፍያ</th><th class="col-rem">ቀሪ</th><th class="col-act">ድርጊት</th></tr>
+            </thead>
+            <tbody id="tbody1"></tbody>
+        </table>
+    </div>
+
+    <div id="section2">
+        <h2>2ኛ ክፍል (ኸሊል)</h2>
+        <button class="toggle-btn" onclick="toggleForm(2)">+ ተማሪ መዝግብ</button>
+        <div id="form2" class="registration-area">
+            <input type="text" id="name2" placeholder="ስም">
+            <input type="number" id="paid2" placeholder="ክፍያ">
+            <input type="number" id="rem2" placeholder="ቀሪ">
+            <button class="btn-save" onclick="saveToFirebase(2)">ሴቭ</button>
+        </div>
+        <table>
+            <thead>
+                <tr><th class="col-id">ተ.ቁ</th><th class="col-name">ስም</th><th class="col-paid">ክፍያ</th><th class="col-rem">ቀሪ</th><th class="col-act">ድርጊት</th></tr>
+            </thead>
+            <tbody id="tbody2"></tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <span style="font-size: 11px; color: #888;">© 2026</span>
+        <div class="admin-box" onclick="checkAdmin()">አድሚን</div>
+    </div>
+</div>
+
+<div id="adminPanel">
+    <div class="admin-content">
+        <h3>አድሚን መቆጣጠሪያ</h3>
+        <div id="noticeBoard" style="height:100px; border:1px solid #ddd; padding:5px; overflow-y:auto; font-size:12px; margin-bottom:10px; background: #f9f9f9;"></div>
+        <input type="text" id="adminMsg" placeholder="መልእክት...">
+        <button class="btn-save" onclick="sendNotice()">ላክ</button>
+        <hr>
+        <input type="password" id="newPin" placeholder="አዲስ ፒን">
+        <button class="btn-save" style="background:#f39c12;" onclick="changePin()">ፒን ቀይር</button>
+        <button class="btn-save" style="background:#e74c3c; margin-top:10px;" onclick="closeAdmin()">ዝጋ</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCR0jFmZZRh-YELRFeWFzLzZDe7VXiyge4",
+        authDomain: "kelil-nesro-shop-2d67b.firebaseapp.com",
+        databaseURL: "https://kelil-nesro-shop-2d67b-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "kelil-nesro-shop-2d67b",
+        storageBucket: "kelil-nesro-shop-2d67b.firebasestorage.app",
+        messagingSenderId: "624822189907",
+        appId: "1:624822189907:web:dabb9828e6fe2c64406ba6"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let currentPin = "1313";
+
+    db.ref('al_aqsa_madrasa/settings/pin').on('value', snap => { if(snap.val()) currentPin = snap.val(); });
+
+    function checkAdmin() {
+        if (prompt("ፒን ያስገቡ:") === currentPin) document.getElementById('adminPanel').style.display = 'block';
+    }
+
+    function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+
+    function changePin() {
+        const np = document.getElementById('newPin').value;
+        if(np.length >= 4) db.ref('al_aqsa_madrasa/settings/pin').set(np).then(() => alert("ፒን ተቀይሯል"));
+    }
+
+    function sendNotice() {
+        const msg = document.getElementById('adminMsg').value;
+        if(!msg) return;
+        db.ref('al_aqsa_madrasa/notices').push({ text: msg, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+        document.getElementById('adminMsg').value = "";
+    }
+
+    db.ref('al_aqsa_madrasa/notices').on('value', snap => {
+        const box = document.getElementById('noticeBoard');
+        box.innerHTML = "";
+        snap.forEach(c => { box.innerHTML += `<div><b>${c.val().time}:</b> ${c.val().text}</div>`; });
+        box.scrollTop = box.scrollHeight;
+    });
+
+    function toggleForm(g) { const f = document.getElementById(`form${g}`); f.style.display = (f.style.display === "block") ? "none" : "block"; }
+
+    function saveToFirebase(grade) {
+        const name = document.getElementById(`name${grade}`).value;
+        const paid = document.getElementById(`paid${grade}`).value || 0;
+        const rem = document.getElementById(`rem${grade}`).value || 0;
+        if (name) {
+            db.ref(`al_aqsa_madrasa/grade${grade}`).push({ name, paid: parseFloat(paid), rem: parseFloat(rem) });
+            document.getElementById(`name${grade}`).value = "";
+            document.getElementById(`paid${grade}`).value = "";
+            document.getElementById(`rem${grade}`).value = "";
+            toggleForm(grade);
+        }
+    }
+
+    function drawTable(grade, dataSnapshot) {
+        const tbody = document.getElementById(`tbody${grade}`);
+        tbody.innerHTML = "";
+        let count = 0;
+
+        if (dataSnapshot && dataSnapshot.exists()) {
+            dataSnapshot.forEach((child) => {
+                count++;
+                const data = child.val();
+                tbody.innerHTML += `<tr>
+                    <td>${count}</td>
+                    <td class="col-name">${data.name}</td>
+                    <td>${data.paid}</td>
+                    <td>${data.rem}</td>
+                    <td>
+                        <button class="action-btn add-btn" onclick="addMoney(${grade}, '${child.key}', ${data.paid}, ${data.rem})">+</button>
+                        <button class="action-btn" onclick="handleUpdate(${grade}, '${child.key}')">⚙️</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        for (let i = count + 1; i <= 20; i++) {
+            tbody.innerHTML += `<tr style="color:#ccc;"><td>${i}</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>`;
+        }
+    }
+
+    db.ref('al_aqsa_madrasa/grade1').on('value', snap => drawTable(1, snap));
+    db.ref('al_aqsa_madrasa/grade2').on('value', snap => drawTable(2, snap));
+
+    // አዲስ ገንዘብ ለመደመር እና ከቀሪ ለመቀነስ
+    function addMoney(grade, key, currentPaid, currentRem) {
+        let amt = prompt("የሚደመር የገንዘብ መጠን ያስገቡ፡");
+        if (amt === null || amt === "") return;
+        
+        let val = parseFloat(amt);
+        if (!isNaN(val)) {
+            let newPaid = currentPaid + val;
+            let newRem = Math.max(0, currentRem - val); // ቀሪው ከዜሮ በታች እንዳይወርድ
+            
+            db.ref(`al_aqsa_madrasa/grade${grade}/${key}`).update({
+                paid: newPaid,
+                rem: newRem
+            });
+        } else {
+            alert("እባክዎ ትክክለኛ ቁጥር ያስገቡ");
+        }
+    }
+
+    // ተማሪ ለማጥፋት ወይም ዳታ ለማጽዳት
+    function handleUpdate(grade, key) {
+        let choice = prompt("1. ተማሪ ሰርዝ | 2. የክፍያ ዳታ አጽዳ (Reset)");
+        let ref = db.ref(`al_aqsa_madrasa/grade${grade}/${key}`);
+        
+        if (choice === "1") {
+            if(confirm("ይህ ተማሪ ሙሉ በሙሉ ይጥፋ?")) ref.remove();
+        } else if (choice === "2") {
+            if(confirm("የዚህን ተማሪ ክፍያ እና ቀሪ ወደ 0 መመለስ ይፈልጋሉ?")) {
+                ref.update({ paid: 0, rem: 0 });
+            }
+        }
+    }
+
+    window.onload = () => { drawTable(1, null); drawTable(2, null); };
+</script>
+</body>
+</html>
 
